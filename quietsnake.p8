@@ -10,7 +10,6 @@ function _init()
 	pl.dy = 0
  pl.speed = 1
  pl.bods = 3
- modulo = 1
  powerups = {}
  t = {}
  t.timer = 0
@@ -34,7 +33,8 @@ function _init()
  	add (powerups, {
  				sp = (flr(rnd(13))+1),
  				x = rnd(120),
- 				y = rnd(120),
+ 				y = -rnd(30),
+ 				speed = rnd(2)
  				})
  	end
  	
@@ -70,17 +70,16 @@ end
 
 -- body switcheroo
 function switch_bodies()
-	if (t.timer%t.modulo == 0) then
-			for i=pl.bods,2,-1 do
+ if t.timer % t.modulo == 0 then 
+		for i=pl.bods,2,-1 do
 			bodiesx[i]=bodiesx[i-1]
 			bodiesy[i]=bodiesy[i-1]
 			end
-
 -- body 1 extrawurst
-			bodiesx[1] = pl.x-pl.dx
-			bodiesy[1] = pl.y-pl.dy
+		bodiesx[1] = pl.x-pl.dx
+		bodiesy[1] = pl.y-pl.dy
+		end
 	end
-end
 
 -- player death
 function death()
@@ -114,10 +113,10 @@ function addscore()
 
 -- wrap around the screen
 function wraparound()
-if pl.x == 129 then pl.x = 1 end
-if pl.x == 0 then pl.x = 128 end
-if pl.y == 129 then pl.y = 1 end
-if pl.y == 0 then pl.y = 128 end
+if pl.x >= 129 then pl.x = 1 end
+if pl.x <= 0 then pl.x = 128 end
+if pl.y >= 129 then pl.y = 1 end
+if pl.y <= 0 then pl.y = 128 end
 end
 
 -- collision with self
@@ -126,7 +125,7 @@ for i=1,pl.bods,1 do
 	if pl.x == bodiesx[i]
 		and pl.y == bodiesy[i]
 		then 
-		dead.state  = true
+		dead.state = true
 		ded.sp = 72
 		end
 	end
@@ -135,12 +134,24 @@ end
 -- powerup spawning
 function powerup_spawn()
  for i=1,2 do
- 	powerups[i] = {
- 				sp = (flr(rnd(13))+1),
- 				x = rnd(120),
- 				y = rnd(120),
- 				}
+ 	powerups[i].sp = (flr(rnd(13))+1)
+ 	powerups[i].x = rnd(120)
+ 	powerups[i].y = -rnd(30)
+ 	powerups[i].speed = rnd(2)
  	end
+end
+
+-- powerups dropping
+function powerup_drop ()
+ for i=1,2 do
+  powerups[i].y += powerups[i].speed 					
+  if powerups[i].y >= 128 then
+ 		powerups[i].sp = flr(rnd(13))+1
+ 		powerups[i].x = rnd(120)
+ 		powerups[i].y = -rnd(30)
+ 		powerups[i].speed = rnd(2)
+ 		end
+	end
 end
 
 -- collision with powerup
@@ -153,6 +164,7 @@ for p in all(powerups) do
 				pl.bods += 2
 				if(t.step < t.modulo) then
 					t.step *= 2
+					t.timer = 0
 				end
 				fx.sp = 63
  			ex.sp = 69
@@ -165,6 +177,7 @@ for p in all(powerups) do
 	end
 end
 	
+-- powerup vfx when eaten
 function eaten()
 	if fx.sp >= 63 then 
 		fx.sp += 1/2
@@ -176,43 +189,49 @@ function eaten()
 	if ex.sp > 71 then ex.sp=0 end
 end
 
+
 --  where the magic happens
+
 function _update()
-
-if (dead.state) then
-	death()
 	
-else
-switch_bodies()
+	if (dead.state) then
+		death()
+	
+	else
+	
+		wraparound()
+		
+		powerup_collision()
+		
+		powerup_drop()
 
-move_direction()
+		eaten()
+		
+		switch_bodies()
+		
+		move_direction()
 
-collision_self()
-
-wraparound()
-
-powerup_collision()
-
-eaten()
-
--- storytime()
-
--- execute movement
-t.timer+=t.step
-
+			-- storytime()
+			
+		t.timer+=t.step		
+				
 		if (t.timer%t.modulo == 0) then
 			pl.x += pl.dx
 			pl.y += pl.dy
-		end
+			end
+		
+		collision_self()
+
 	end
 end
 
---****--  function draw
+--  function draw
 
 function _draw()
 -- background
-rectfill(0,0,127,127,0)
+--rectfill(0,0,127,127,0)
 map()
+
 -- player
 pset(pl.x,pl.y,11)
 
@@ -234,7 +253,8 @@ for p in all(powerups) do
  if ded.sp >= 72 then spr(flr(ded.sp),pl.x-4,pl.y-4) end
  
 -- score
-print("score: "..score,80,120,14)
+rectfill(0,120,127,127,0)
+print("score: "..score,96,122,14)
 
 end
 __gfx__
