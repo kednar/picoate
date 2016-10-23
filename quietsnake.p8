@@ -2,22 +2,32 @@ pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
 function _init()
+	
+-- system variables
 	score = 0
+	dead = {}
+ dead.state = false
+ dead.timer = 0
+ t = {}
+ t.timer = 0
+ t.step = 1
+ t.modulo = 8
+
+-- player snake
 	bodiesx = {}
 	bodiesy = {}
 	pl = {x = 64, y = 64}
 	pl.dx = -1
 	pl.dy = 0
- pl.speed = 1
+ pl.spd = 1
  pl.bods = 3
+ bodycolor = 3
+
+-- powerups
  powerups = {}
- t = {}
- t.timer = 0
- t.step = 1
- t.modulo = 8
- dead = {}
- dead.state = false
- dead.timer = 0
+ powerup = {}
+ powerup.no = 3
+ powerup.spd = 1.5
  
  -- sprites
  ded = {}
@@ -29,12 +39,12 @@ function _init()
 	ex = {}
 	ex.sp = 0
  
-	for i=1,2 do
+	for i=1,powerup.no do
  	add (powerups, {
  				sp = (flr(rnd(13))+1),
  				x = rnd(120),
  				y = -rnd(30),
- 				speed = rnd(2)
+ 				spd = rnd(0.5,1.5)
  				})
  	end
  	
@@ -50,21 +60,21 @@ end
 
 -- determine player direction
 function move_direction()
-if btnp(0) and (pl.dx != pl.speed) then
-	pl.dx = -pl.speed
+if btnp(0) and (pl.dx != pl.spd) then
+	pl.dx = -pl.spd
  pl.dy = 0
  end
-if btnp(1) and (pl.dx != -pl.speed) then
-	pl.dx = pl.speed 
+if btnp(1) and (pl.dx != -pl.spd) then
+	pl.dx = pl.spd 
  pl.dy = 0
  end
-if btnp(2) and (pl.dy != pl.speed) then
+if btnp(2) and (pl.dy != pl.spd) then
 	pl.dx = 0
-	pl.dy = -pl.speed
+	pl.dy = -pl.spd
 	end
-if btnp(3) and (pl.dy != -pl.speed) then
+if btnp(3) and (pl.dy != -pl.spd) then
 	pl.dx = 0
-	pl.dy = pl.speed
+	pl.dy = pl.spd
 	end
 end
 
@@ -96,6 +106,13 @@ function death()
 	if(dead.timer == 30) then
 		music (03)
 	end
+	
+	-- blinking death animation
+	if bodycolor > 30 then
+		bodycolor = 0
+		else
+			bodycolor += 0.5
+		end
 
 	if(dead.timer == 150)	then	
 	 dead.timer = 0
@@ -133,23 +150,23 @@ end
 
 -- powerup spawning
 function powerup_spawn()
- for i=1,2 do
+ for i=1,powerup.no do
  	powerups[i].sp = (flr(rnd(13))+1)
  	powerups[i].x = rnd(120)
  	powerups[i].y = -rnd(30)
- 	powerups[i].speed = rnd(2)
+ 	powerups[i].spd = rnd(0.5,1.5)
  	end
 end
 
 -- powerups dropping
 function powerup_drop ()
- for i=1,2 do
-  powerups[i].y += powerups[i].speed 					
+ for i=1,powerup.no do
+  powerups[i].y += powerups[i].spd 					
   if powerups[i].y >= 128 then
  		powerups[i].sp = flr(rnd(13))+1
  		powerups[i].x = rnd(120)
  		powerups[i].y = -rnd(30)
- 		powerups[i].speed = rnd(2)
+ 		powerups[i].spd = rnd(0.5,1.5)
  		end
 	end
 end
@@ -161,7 +178,7 @@ for p in all(powerups) do
 				(pl.x <= p.x+7) and
 				(pl.y >= p.y) and
 				(pl.y <= p.y+7) then
-				pl.bods += 2
+				pl.bods = flr(pl.bods+(pl.bods/2))
 				if(t.step < t.modulo) then
 					t.step *= 2
 					t.timer = 0
@@ -237,8 +254,9 @@ pset(pl.x,pl.y,11)
 
 -- bodies
 for i=1,pl.bods,1 do
-	pset(bodiesx[i],bodiesy[i],3)
+	pset(bodiesx[i],bodiesy[i],flr(bodycolor))
 	end
+		
 	
 -- powerups
 for p in all(powerups) do
